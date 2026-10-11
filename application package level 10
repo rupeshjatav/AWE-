@@ -1,0 +1,52 @@
+application package code 
+
+import HCSC_USERLIST_UTILS:GetApproversBase;
+
+class BSWH_AdhocSalary10 extends HCSC_USERLIST_UTILS:GetApproversBase
+   method BSWH_AdhocSalary10(&rec_ As Record);
+   method GetUsers(&aryPrevOpr_ As array of string, &thread_ As Record) Returns array of string;
+end-class;
+
+method BSWH_AdhocSalary10
+   /+ &rec_ as Record +/
+   %Super = create HCSC_USERLIST_UTILS:GetApproversBase(&rec_);
+end-method;
+
+method GetUsers
+   /+ &aryPrevOpr_ as Array of String, +/
+   /+ &thread_ as Record +/
+   /+ Returns Array of String +/
+   /+ Extends/implements HCSC_USERLIST_UTILS:GetApproversBase.GetUsers +/
+   
+   Local array of string &oprid_arr = CreateArrayRept("", 0);
+   Local array of string &arrayFetch = CreateArrayRept("", 0);
+   Local string &ApproverOprid;
+   Local integer &i = 1;
+   Local integer &j = 0;
+   Local SQL &ApprSQL;
+   Local string &emplid = &thread_.EMPLID.Value;
+   Local string &emplrcd = &thread_.EMPL_RCD.Value;
+   REM KANNA SQLExec("SELECT O.OPRID FROM PSOPRDEFN O WHERE EMPLID IN (SELECT D.SUPERVISOR_ID FROM PS_HR_DIRECT_REP_2 D WHERE D.EMPLID = :1 AND D.EMPL_STATUS = 'A' AND D.HR_DR_LEVEL <> 1 AND D.HR_DR_LEVEL <> (SELECT MAX(D1.HR_DR_LEVEL) FROM PS_HR_DIRECT_REP_2 D1 WHERE D1.EMPLID = D.EMPLID AND D1.EMPL_RCD = D.EMPL_RCD))", %EmployeeId, &ApproverOprid);
+   REM &ApprSQL = CreateSQL("SELECT O.OPRID FROM PSOPRDEFN O WHERE EMPLID IN (SELECT D.SUPERVISOR_ID FROM PS_HR_DIRECT_REP_2 D WHERE D.EMPLID = :1   and HR_DR_LEVEL=10  )", &emplid, &ApproverOprid);
+   &ApprSQL = CreateSQL("SELECT O.OPRID FROM PSOPRDEFN O WHERE EMPLID IN (SELECT D.SUPERVISOR_ID FROM PS_HR_DIRECT_REP_2 D WHERE D.EMPLID = :1 AND EMPL_RCD=:2  and HR_DR_LEVEL=10  )", &emplid, &emplrcd, &ApproverOprid);
+   rem &ApprSQL = CreateSQL("SELECT O.OPRID FROM PSOPRDEFN O WHERE EMPLID IN (SELECT D.SUPERVISOR_ID FROM PS_HR_DIRECT_REP_2 D WHERE D.EMPLID = :1 AND D.EMPL_STATUS = 'A' AND D.HR_DR_LEVEL <> 1 AND D.HR_DR_LEVEL <> (SELECT MAX(D1.HR_DR_LEVEL) FROM PS_HR_DIRECT_REP_2 D1 WHERE D1.EMPLID = D.EMPLID AND D1.EMPL_RCD = D.EMPL_RCD))", %EmployeeId);
+   While &ApprSQL.Fetch(&ApproverOprid)
+      
+      &oprid_arr.Push(&ApproverOprid);
+      rem Break;
+   End-While;
+   
+   rem &oprid_arr.Push(&ApproverOprid);
+   <* Evaluate &arrayFetch [&i]
+      When = &arrayFetch [&i]    
+         &j = &i + 1;
+         &oprid_arr.Push(&ApproverOprid);
+         &i = &i + 1;
+         Break;
+      End-Evaluate;
+ *>
+   
+   Return &oprid_arr;
+   
+end-method;
+
